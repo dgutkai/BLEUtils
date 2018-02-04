@@ -4,6 +4,7 @@ import android.content.Intent;
 import android.support.v4.widget.SwipeRefreshLayout;
 import android.support.v7.app.AppCompatActivity;
 import android.os.Bundle;
+import android.util.Log;
 import android.view.View;
 import android.widget.AdapterView;
 import android.widget.ListView;
@@ -17,6 +18,7 @@ import com.inuker.bluetooth.library.search.SearchResult;
 import com.inuker.bluetooth.library.search.response.SearchResponse;
 import com.inuker.bluetooth.library.utils.BluetoothLog;
 import com.inuker.bluetooth.library.utils.StringUtils;
+import com.qcymall.ancdemo.adpcm.AdpcmUtils;
 
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -34,6 +36,13 @@ public class MainActivity extends BaseActivity {
         setContentView(R.layout.activity_main);
         initDeviceListView();
         scanBleDevice();
+        byte[] bytes = new byte[6];
+        AdpcmUtils.AdpcmState state = new AdpcmUtils.AdpcmState();
+        state.index = 1;
+        state.valprev = 10;
+
+        int result = AdpcmUtils.shareInstance().adpcmCoder(new short[]{1, 2, 3}, bytes, 3, (short) 10, 2);
+        Log.e("TAG", result + "");
     }
 
     private void checkBluetooth(){

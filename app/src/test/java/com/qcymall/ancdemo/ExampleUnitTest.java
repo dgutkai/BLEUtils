@@ -1,5 +1,7 @@
 package com.qcymall.ancdemo;
 
+import com.qcymall.ancdemo.adpcm.AdpcmUtils;
+
 import org.junit.Test;
 
 import static org.junit.Assert.*;
@@ -12,6 +14,8 @@ import static org.junit.Assert.*;
 public class ExampleUnitTest {
     @Test
     public void addition_isCorrect() throws Exception {
-        assertEquals(4, 2 + 2);
+        int result = AdpcmUtils.shareInstance().addFromJNI();
+
+        assertEquals(12, result);
     }
 }
