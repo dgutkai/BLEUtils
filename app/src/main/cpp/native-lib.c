@@ -15,6 +15,7 @@ struct adpcm_state {
     char	index;		/* Index into stepsize table */
 };
 
+static struct adpcm_state adpcmState;
 static int stepsizeTable[89] = {
         7, 8, 9, 10, 11, 12, 13, 14, 16, 17,
         19, 21, 23, 25, 28, 31, 34, 37, 41, 45,
@@ -26,6 +27,7 @@ static int stepsizeTable[89] = {
         5894, 6484, 7132, 7845, 8630, 9493, 10442, 11487, 12635, 13899,
         15289, 16818, 18500, 20350, 22385, 24623, 27086, 29794, 32767
 };
+
 
 int adpcm_coder(short *indata, unsigned char *outdata, int len, struct adpcm_state *state)
 {
@@ -294,28 +296,36 @@ int adpcm_decoder(unsigned char *indata, short *outdata, int len, struct adpcm_s
     return count;
 }
 
-int adpcm_coder2(short *indata, unsigned char *outdata, int len, struct adpcm_state *state) {
-    memcpy(outdata, indata, (size_t)len*2);
+int adpcm_coder2(short *indata, unsigned char *outdata, int len, struct adpcm_state *state){
+    memcpy(outdata, indata, len);
+}
+int adpcm_decoder2(unsigned char *indata, short *outdata, int len, struct adpcm_state *state){
+    memcpy(outdata, indata, len);
+}
+// 只能在编码开始前调用一次
+JNIEXPORT void Java_com_qcymall_ancdemo_adpcm_AdpcmUtils_adpcmReset(
+        JNIEnv *env,
+        jobject obj){
+    adpcmState.index = 0;
+    adpcmState.valprev = 0;
 
 }
-
 JNIEXPORT jint Java_com_qcymall_ancdemo_adpcm_AdpcmUtils_adpcmCoder(
         JNIEnv *env,
-        jobject obj, jshortArray indata, jcharArray outdata, jint len, jshort valprev, jint index){
+        jobject obj, jshortArray indata, jbyteArray outdata, jint len){
     jshort* jInData = (*env)->GetShortArrayElements(env, indata, NULL);
-    jbyte * jOutData = (*env)->GetByteArrayElements(env, outdata, NULL);
-    struct adpcm_state *state1 = malloc(sizeof(struct adpcm_state));
-    state1->index = index;
-    state1->valprev = valprev;
-
-    int result = adpcm_coder2(jInData, (unsigned char*)jOutData, len, state1);
-    free(state1);
+    jbyte* jOutData = (*env)->GetByteArrayElements(env, outdata, NULL);
+    int result = adpcm_coder2(jInData, (unsigned char*)jOutData, len, &adpcmState);
     (*env)->ReleaseByteArrayElements(env, outdata, jOutData, 0);
     return result;
 }
 
-JNIEXPORT jint Java_com_qcymall_ancdemo_adpcm_AdpcmUtils_addFromJNI(
+JNIEXPORT jint Java_com_qcymall_ancdemo_adpcm_AdpcmUtils_adpcmDecoder(
         JNIEnv *env,
-        jobject obj) {
-    return 12;
+        jobject obj, jbyteArray indata, jshortArray outdata, jint len){
+    jbyte* jInData = (*env)->GetByteArrayElements(env, indata, NULL);
+    jshort * jOutData = (*env)->GetShortArrayElements(env, outdata, NULL);
+    int result = adpcm_decoder2((unsigned char*)jInData, jOutData, len, &adpcmState);
+    (*env)->ReleaseShortArrayElements(env, outdata, jOutData, 0);
+    return result;
 }

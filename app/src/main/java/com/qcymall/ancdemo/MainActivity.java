@@ -2,7 +2,6 @@ package com.qcymall.ancdemo;
 
 import android.content.Intent;
 import android.support.v4.widget.SwipeRefreshLayout;
-import android.support.v7.app.AppCompatActivity;
 import android.os.Bundle;
 import android.util.Log;
 import android.view.View;
@@ -10,14 +9,12 @@ import android.widget.AdapterView;
 import android.widget.ListView;
 import android.widget.SimpleAdapter;
 
-import com.inuker.bluetooth.library.BluetoothClient;
 import com.inuker.bluetooth.library.beacon.Beacon;
 import com.inuker.bluetooth.library.connect.listener.BluetoothStateListener;
 import com.inuker.bluetooth.library.search.SearchRequest;
 import com.inuker.bluetooth.library.search.SearchResult;
 import com.inuker.bluetooth.library.search.response.SearchResponse;
 import com.inuker.bluetooth.library.utils.BluetoothLog;
-import com.inuker.bluetooth.library.utils.StringUtils;
 import com.qcymall.ancdemo.adpcm.AdpcmUtils;
 
 import java.util.ArrayList;
@@ -36,13 +33,15 @@ public class MainActivity extends BaseActivity {
         setContentView(R.layout.activity_main);
         initDeviceListView();
         scanBleDevice();
-        byte[] bytes = new byte[6];
+        byte[] bytes = new byte[12];
         AdpcmUtils.AdpcmState state = new AdpcmUtils.AdpcmState();
         state.index = 1;
         state.valprev = 10;
-
-        int result = AdpcmUtils.shareInstance().adpcmCoder(new short[]{1, 2, 3}, bytes, 3, (short) 10, 2);
-        Log.e("TAG", result + "");
+        short[] shorts = new short[3];
+        int result = AdpcmUtils.shareInstance().adpcmCoder(new short[]{1, 2, 3, 4, 5, 6}, bytes, 12);
+        Log.e("TAG", result + " " + bytes[1]  + " " + bytes[2]);
+        int result2 = AdpcmUtils.shareInstance().adpcmDecoder(new byte[]{1, 2, 3, 4, 5, 6}, shorts, 6);
+        Log.e("TAG", result + " " + bytes[1]  + " " + bytes[2]);
     }
 
     private void checkBluetooth(){
@@ -68,7 +67,7 @@ public class MainActivity extends BaseActivity {
         deviceListView.setOnItemClickListener(new AdapterView.OnItemClickListener() {
             @Override
             public void onItemClick(AdapterView<?> adapterView, View view, int i, long l) {
-                Intent detialIntent = new Intent(getBaseContext(), BLEDetialActivity.class);
+                Intent detialIntent = new Intent(getBaseContext(), DeviceDetailActivity.class);
                 detialIntent.putExtra("data", deviceData.get(i));
                 startActivity(detialIntent);
             }

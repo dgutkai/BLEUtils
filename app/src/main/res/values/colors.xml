@@ -3,4 +3,7 @@
     <color name="colorPrimary">#3F51B5</color>
     <color name="colorPrimaryDark">#303F9F</color>
     <color name="colorAccent">#FF4081</color>
+
+    <color name="device_detail_service">#cccccc</color>
+    <color name="device_detail_character">#ffffff</color>
 </resources>

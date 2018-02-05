@@ -3,4 +3,6 @@
     <string name="status_connect">连接</string>
     <string name="status_disconnect">断开连接</string>
     <string name="status_connecting">正在连接</string>
+
+    <string name="connecting">正在连接</string>
 </resources>

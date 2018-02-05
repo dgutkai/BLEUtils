@@ -12,12 +12,19 @@ import com.inuker.bluetooth.library.Constants;
 import com.inuker.bluetooth.library.connect.listener.BleConnectStatusListener;
 import com.inuker.bluetooth.library.connect.options.BleConnectOptions;
 import com.inuker.bluetooth.library.connect.response.BleConnectResponse;
+import com.inuker.bluetooth.library.connect.response.BleNotifyResponse;
+import com.inuker.bluetooth.library.connect.response.BleReadResponse;
+import com.inuker.bluetooth.library.connect.response.BleUnnotifyResponse;
+import com.inuker.bluetooth.library.connect.response.BleWriteResponse;
 import com.inuker.bluetooth.library.model.BleGattProfile;
 import com.inuker.bluetooth.library.utils.BluetoothLog;
 import com.inuker.bluetooth.library.utils.BluetoothUtils;
+import com.inuker.bluetooth.library.utils.ByteUtils;
 
 import java.util.HashMap;
+import java.util.UUID;
 
+import static com.inuker.bluetooth.library.Constants.REQUEST_SUCCESS;
 import static com.inuker.bluetooth.library.Constants.STATUS_CONNECTED;
 import static com.inuker.bluetooth.library.Constants.STATUS_DISCONNECTED;
 
@@ -27,8 +34,10 @@ import static com.inuker.bluetooth.library.Constants.STATUS_DISCONNECTED;
 
 public class BLEDetialActivity extends BaseActivity {
 
-    private String deviceMAC;
-    private String deviceName;
+    private String mMac;
+    private String mName;
+    private UUID mService;
+    private UUID mCharacter;
 
     private MenuItem connectStatus;
     @Override
@@ -36,20 +45,15 @@ public class BLEDetialActivity extends BaseActivity {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_bledetial);
         Intent intent = getIntent();
-        HashMap<String, Object> data = (HashMap<String, Object>)intent.getSerializableExtra("data");
-        if (data != null){
-            deviceMAC = (String) data.get("mac");
-            deviceName = (String) data.get("name");
-            setTitle(deviceName);
-            Log.e("BLEDetailActivity", (String) data.get("name"));
+        mMac = intent.getStringExtra("mac");
+        mName = intent.getStringExtra("name");
+        mService = (UUID) intent.getSerializableExtra("service");
+        mCharacter = (UUID) intent.getSerializableExtra("character");
 
-        }else{
-            Toast.makeText(this, "没有数据。", Toast.LENGTH_LONG).show();
-            finish();
-        }
+        setTitle(mName);
 
-        mBluetoothClien.registerConnectStatusListener(deviceMAC, mBleConnectStatusListener);
-
+        mBluetoothClien.registerConnectStatusListener(mMac, mBleConnectStatusListener);
+        mBluetoothClien.notify(mMac, mService, mCharacter, mNotifyRsp);
     }
 
     @Override
@@ -63,8 +67,8 @@ public class BLEDetialActivity extends BaseActivity {
     public boolean onOptionsItemSelected(MenuItem item) {
         switch (item.getItemId()){
             case R.id.menu_status:
-                if (mBluetoothClien.getConnectStatus(deviceMAC) == Constants.STATUS_DEVICE_CONNECTED){
-                    mBluetoothClien.disconnect(deviceMAC);
+                if (mBluetoothClien.getConnectStatus(mMac) == Constants.STATUS_DEVICE_CONNECTED){
+                    mBluetoothClien.disconnect(mMac);
                 }else {
                     connectBLE();
                 }
@@ -76,7 +80,7 @@ public class BLEDetialActivity extends BaseActivity {
     @Override
     protected void onResume() {
         super.onResume();
-        int status = mBluetoothClien.getConnectStatus(deviceMAC);
+        int status = mBluetoothClien.getConnectStatus(mMac);
         if (status == Constants.STATUS_DEVICE_DISCONNECTING || status == Constants.STATUS_DEVICE_DISCONNECTED){
             connectBLE();
         }
@@ -85,7 +89,7 @@ public class BLEDetialActivity extends BaseActivity {
     @Override
     protected void onDestroy() {
         super.onDestroy();
-        mBluetoothClien.unregisterConnectStatusListener(deviceMAC, mBleConnectStatusListener);
+        mBluetoothClien.unregisterConnectStatusListener(mMac, mBleConnectStatusListener);
     }
 
     private void connectBLE(){
@@ -100,7 +104,7 @@ public class BLEDetialActivity extends BaseActivity {
                 .setServiceDiscoverTimeout(20000)  // 发现服务超时20s
                 .build();
 
-        mBluetoothClien.connect(deviceMAC, options, new BleConnectResponse() {
+        mBluetoothClien.connect(mMac, options, new BleConnectResponse() {
             @Override
             public void onResponse(int code, BleGattProfile data) {
 
@@ -115,9 +119,52 @@ public class BLEDetialActivity extends BaseActivity {
         public void onConnectStatusChanged(String mac, int status) {
             if (status == STATUS_CONNECTED) {
                 connectStatus.setTitle(R.string.status_disconnect);
+
             } else if (status == STATUS_DISCONNECTED) {
                 connectStatus.setTitle(R.string.status_connect);
             }
         }
     };
+
+    private final BleReadResponse mReadRsp = new BleReadResponse() {
+        @Override
+        public void onResponse(int code, byte[] data) {
+            if (code == REQUEST_SUCCESS) {
+//                mBtnRead.setText(String.format("read: %s", ByteUtils.byteToString(data)));
+                Log.e("BLEDetialActivity", String.format("read: %s", ByteUtils.byteToString(data)));
+
+            }
+        }
+    };
+    private final BleWriteResponse mWriteRsp = new BleWriteResponse() {
+        @Override
+        public void onResponse(int code) {
+            if (code == REQUEST_SUCCESS) {
+                Log.e("BLEDetialActivity", "success");
+            } else {
+                Log.e("BLEDetialActivity", "failed");
+            }
+        }
+    };
+
+    private final BleNotifyResponse mNotifyRsp = new BleNotifyResponse() {
+        @Override
+        public void onNotify(UUID service, UUID character, byte[] value) {
+            if (service.equals(mService) && character.equals(mCharacter)) {
+//                mBtnNotify.setText(String.format("%s", ByteUtils.byteToString(value)));
+                Log.e("BLEDetialActivity", String.format("Notify: %s", ByteUtils.byteToString(value)));
+            }
+        }
+
+        @Override
+        public void onResponse(int code) {
+            if (code == REQUEST_SUCCESS) {
+                Log.e("BLEDetialActivity", "success");
+            } else {
+                Log.e("BLEDetialActivity", "failed");
+            }
+        }
+    };
+
+
 }

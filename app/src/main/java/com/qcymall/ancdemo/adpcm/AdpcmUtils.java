@@ -9,6 +9,10 @@ public class AdpcmUtils {
     public short valprev;
     public int index;
 
+    static {
+        System.loadLibrary("native-lib");
+
+    }
     public static class AdpcmState{
         public short valprev;
         public int index;
@@ -21,9 +25,10 @@ public class AdpcmUtils {
         return instance;
     }
     private AdpcmUtils(){
-        System.loadLibrary("native-lib");
+        adpcmReset();
     }
 
-    public native int addFromJNI();
-    public native int adpcmCoder(short[] indata, byte[] outdata, int len, short valprev, int index);
+    public native void adpcmReset();
+    public native int adpcmCoder(short[] indata, byte[] outdata, int len);
+    public native int adpcmDecoder(byte[] indata, short[] outdata, int len);
 }
