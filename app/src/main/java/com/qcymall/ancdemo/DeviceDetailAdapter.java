@@ -15,6 +15,7 @@ import com.inuker.bluetooth.library.model.BleGattService;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.UUID;
 
 /**
  * Created by dingjikerbo on 2016/9/5.
@@ -26,6 +27,10 @@ public class DeviceDetailAdapter extends BaseAdapter {
     private BluetoothDevice mDevice;
 
     private List<DetailItem> mDataList;
+
+
+    public static UUID readCharacter;
+    public static UUID writeCharacter;
 
     public DeviceDetailAdapter(Context context, BluetoothDevice device) {
         mContext = context;
@@ -48,7 +53,6 @@ public class DeviceDetailAdapter extends BaseAdapter {
             items.add(new DetailItem(DetailItem.TYPE_SERVICE, service.getUUID(), null));
             List<BleGattCharacter> characters = service.getCharacters();
             for (BleGattCharacter character : characters) {
-
                 items.add(new DetailItem(DetailItem.TYPE_CHARACTER, character.getUuid(), service.getUUID()));
             }
         }

@@ -1,6 +1,9 @@
 package com.qcymall.ancdemo;
 
 import android.content.Intent;
+import android.media.AudioFormat;
+import android.media.AudioManager;
+import android.media.AudioTrack;
 import android.support.v4.widget.SwipeRefreshLayout;
 import android.os.Bundle;
 import android.util.Log;
@@ -17,6 +20,11 @@ import com.inuker.bluetooth.library.search.response.SearchResponse;
 import com.inuker.bluetooth.library.utils.BluetoothLog;
 import com.qcymall.ancdemo.adpcm.AdpcmUtils;
 
+import java.io.BufferedOutputStream;
+import java.io.File;
+import java.io.FileInputStream;
+import java.io.FileOutputStream;
+import java.io.IOException;
 import java.util.ArrayList;
 import java.util.HashMap;
 
@@ -33,16 +41,15 @@ public class MainActivity extends BaseActivity {
         setContentView(R.layout.activity_main);
         initDeviceListView();
         scanBleDevice();
-        byte[] bytes = new byte[12];
-        AdpcmUtils.AdpcmState state = new AdpcmUtils.AdpcmState();
-        state.index = 1;
-        state.valprev = 10;
-        short[] shorts = new short[3];
-        int result = AdpcmUtils.shareInstance().adpcmCoder(new short[]{1, 2, 3, 4, 5, 6}, bytes, 12);
-        Log.e("TAG", result + " " + bytes[1]  + " " + bytes[2]);
-        int result2 = AdpcmUtils.shareInstance().adpcmDecoder(new byte[]{1, 2, 3, 4, 5, 6}, shorts, 6);
-        Log.e("TAG", result + " " + bytes[1]  + " " + bytes[2]);
+
+//        AdpcmUtils.shareInstance();
+//        AdpcmUtils.AdpcmState state = new AdpcmUtils.AdpcmState();
+//        byte[] bytes = new byte[6];
+//        byte[] resultData = new byte[]{6, 5, 4, 3, 2, 1};
+//        int result = AdpcmUtils.shareInstance().adpcmCoder(new byte[]{1, 2, 3, 4, 5, 6}, bytes, 6);
+//        int result2 = AdpcmUtils.shareInstance().adpcmDecoder(bytes, resultData, bytes.length);
     }
+
 
     private void checkBluetooth(){
         if (!mBluetoothClien.isBluetoothOpened()){
@@ -150,4 +157,6 @@ public class MainActivity extends BaseActivity {
         }
         return false;
     }
+
+
 }

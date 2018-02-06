@@ -297,10 +297,43 @@ int adpcm_decoder(unsigned char *indata, short *outdata, int len, struct adpcm_s
 }
 
 int adpcm_coder2(short *indata, unsigned char *outdata, int len, struct adpcm_state *state){
+    printf("%x, %x, %x", indata[0], indata[1], indata[2]);
     memcpy(outdata, indata, len);
 }
 int adpcm_decoder2(unsigned char *indata, short *outdata, int len, struct adpcm_state *state){
+    printf("%x, %x, %x", outdata[0], outdata[1], outdata[2]);
     memcpy(outdata, indata, len);
+}
+
+struct worker
+{ int number;
+    char name[20];
+    int age;
+};
+
+int open_file(){
+    int ch;//定义文件类型指针
+    FILE *fp, *out;;//判断命令行是否正确
+    unsigned char buffer[512];
+    short resultbuff[1024];
+    //按读方式打开由argv[1]指出的文件
+    if((fp=fopen("/sdcard/DCS/PCM/ABC1.pcm","rb"))==NULL)
+    {
+        printf("The file <%s> can not be opened.\n","/sdcard/DCS/PCM/ABC.pcm");//打开操作不成功
+        return -1;//结束程序的执行
+    }
+    if((out=fopen("/sdcard/DCS/PCM/ABC3.pcm","wb"))==NULL)
+    {
+        printf("The file %s can not be opened.\n","file2.txt");
+        return -1;
+    }
+    while(fread(&buffer,512,1,fp)==1){
+        adpcm_decoder(&buffer, &resultbuff, 512, &adpcmState);
+        fwrite(&resultbuff,2048,1,out);
+    }
+
+    fclose(out);
+    fclose(fp); //关闭fp所指文件
 }
 // 只能在编码开始前调用一次
 JNIEXPORT void Java_com_qcymall_ancdemo_adpcm_AdpcmUtils_adpcmReset(
@@ -308,24 +341,27 @@ JNIEXPORT void Java_com_qcymall_ancdemo_adpcm_AdpcmUtils_adpcmReset(
         jobject obj){
     adpcmState.index = 0;
     adpcmState.valprev = 0;
+    open_file();
 
 }
 JNIEXPORT jint Java_com_qcymall_ancdemo_adpcm_AdpcmUtils_adpcmCoder(
         JNIEnv *env,
-        jobject obj, jshortArray indata, jbyteArray outdata, jint len){
-    jshort* jInData = (*env)->GetShortArrayElements(env, indata, NULL);
+        jobject obj, jbyteArray indata, jbyteArray outdata, jint len){
+    jbyte* jInData_byte = (*env)->GetByteArrayElements(env, indata, NULL);
+    short *jInData = (short *)jInData_byte;
     jbyte* jOutData = (*env)->GetByteArrayElements(env, outdata, NULL);
-    int result = adpcm_coder2(jInData, (unsigned char*)jOutData, len, &adpcmState);
+    int result = adpcm_coder(jInData, (unsigned char*)jOutData, len/2, &adpcmState);
     (*env)->ReleaseByteArrayElements(env, outdata, jOutData, 0);
     return result;
 }
 
 JNIEXPORT jint Java_com_qcymall_ancdemo_adpcm_AdpcmUtils_adpcmDecoder(
         JNIEnv *env,
-        jobject obj, jbyteArray indata, jshortArray outdata, jint len){
+        jobject obj, jbyteArray indata, jbyteArray outdata, jint len){
     jbyte* jInData = (*env)->GetByteArrayElements(env, indata, NULL);
-    jshort * jOutData = (*env)->GetShortArrayElements(env, outdata, NULL);
-    int result = adpcm_decoder2((unsigned char*)jInData, jOutData, len, &adpcmState);
-    (*env)->ReleaseShortArrayElements(env, outdata, jOutData, 0);
+    jbyte * jOutData_byte = (*env)->GetByteArrayElements(env, outdata, NULL);
+    short *jOutData = (short *)jOutData_byte;
+    int result = adpcm_decoder((unsigned char*)jInData, jOutData, len, &adpcmState);
+    (*env)->ReleaseByteArrayElements(env, outdata, (jbyte *)jOutData, 0);
     return result;
 }

@@ -29,6 +29,6 @@ public class AdpcmUtils {
     }
 
     public native void adpcmReset();
-    public native int adpcmCoder(short[] indata, byte[] outdata, int len);
-    public native int adpcmDecoder(byte[] indata, short[] outdata, int len);
+    public native int adpcmCoder(byte[] indata, byte[] outdata, int len);
+    public native int adpcmDecoder(byte[] indata, byte[] outdata, int len);
 }

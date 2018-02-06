@@ -1,6 +1,9 @@
 package com.qcymall.ancdemo;
 
 import android.content.Intent;
+import android.media.AudioFormat;
+import android.media.AudioManager;
+import android.media.AudioTrack;
 import android.os.Bundle;
 import android.support.annotation.Nullable;
 import android.util.Log;
@@ -20,7 +23,14 @@ import com.inuker.bluetooth.library.model.BleGattProfile;
 import com.inuker.bluetooth.library.utils.BluetoothLog;
 import com.inuker.bluetooth.library.utils.BluetoothUtils;
 import com.inuker.bluetooth.library.utils.ByteUtils;
+import com.qcymall.ancdemo.adpcm.AdpcmUtils;
 
+import java.io.BufferedOutputStream;
+import java.io.File;
+import java.io.FileInputStream;
+import java.io.FileOutputStream;
+import java.io.IOException;
+import java.util.Date;
 import java.util.HashMap;
 import java.util.UUID;
 
@@ -38,8 +48,11 @@ public class BLEDetialActivity extends BaseActivity {
     private String mName;
     private UUID mService;
     private UUID mCharacter;
-
     private MenuItem connectStatus;
+
+    private byte[] adpcmBuff;
+//    private byte[] audiobuff;
+
     @Override
     protected void onCreate(@Nullable Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
@@ -54,7 +67,50 @@ public class BLEDetialActivity extends BaseActivity {
 
         mBluetoothClien.registerConnectStatusListener(mMac, mBleConnectStatusListener);
         mBluetoothClien.notify(mMac, mService, mCharacter, mNotifyRsp);
+        UUID writeUUID = UUID.fromString("6E400002-B5A3-F393-E0A9-E50E24DCCA9E");
+        mBluetoothClien.write(mMac, mService, writeUUID, "1".getBytes(), new BleWriteResponse() {
+            @Override
+            public void onResponse(int code) {
+                Log.e("OnResponse", "response = " + code);
+            }
+        });
+
+
+        audioBufSize = AudioTrack.getMinBufferSize(4000,
+                AudioFormat.CHANNEL_OUT_STEREO,
+                AudioFormat.ENCODING_PCM_16BIT);
+        audioBufSize = 244*4;
+        player = new AudioTrack(AudioManager.STREAM_MUSIC, 8000,
+                AudioFormat.CHANNEL_OUT_STEREO,
+                AudioFormat.ENCODING_PCM_16BIT,
+                audioBufSize,
+                AudioTrack.MODE_STREAM);
+//        audiobuff = new byte[audioBufSize*100];
+        adpcmBuff = new byte[audioBufSize/4];
+        player.play();
+//        player1 = new Player();
+//        player1.start();
+
+//        String speakpath = "/sdcard/DCS/PCM/";
+//        File file2 = new File(speakpath, "abc2.pcm");
+//
+//        // 如果文件存在则删除
+//        if (file2.exists()) {
+//            file2.delete();
+//        }
+//        // 在文件系统中根据路径创建一个新的空文件
+//        try {
+//            file2.createNewFile();
+//            // 获取FileOutputStream对象
+//            outputStream = new FileOutputStream(file2);
+//            // 获取BufferedOutputStream对象
+//            bufferedOutputStream = new BufferedOutputStream(outputStream);
+//        } catch (IOException e) {
+//            e.printStackTrace();
+//        }
+
     }
+
 
     @Override
     public boolean onCreateOptionsMenu(Menu menu) {
@@ -152,7 +208,25 @@ public class BLEDetialActivity extends BaseActivity {
         public void onNotify(UUID service, UUID character, byte[] value) {
             if (service.equals(mService) && character.equals(mCharacter)) {
 //                mBtnNotify.setText(String.format("%s", ByteUtils.byteToString(value)));
-                Log.e("BLEDetialActivity", String.format("Notify: %s", ByteUtils.byteToString(value)));
+                Log.e("BLEDetialActivity", String.format("Notify: %s \n%d" , ByteUtils.byteToString(value), (new Date()).getTime() ));
+                synchronized (BLEDetialActivity.this) {
+                    byte[] resultData = new byte[value.length * 4];
+                    int result2 = AdpcmUtils.shareInstance().adpcmDecoder(value, resultData, value.length);
+                    player.write(resultData, 0, resultData.length);
+                }
+
+//                int cpylen = adpcmBuff.length-offset>value.length? value.length: adpcmBuff.length-offset;
+//                System.arraycopy(value, 0, adpcmBuff, offset, cpylen);
+//                offset += value.length;
+//                if (offset >= adpcmBuff.length) {
+//                    offset = 0;
+//                    byte[] resultData = new byte[adpcmBuff.length * 4];
+//                    int result2 = AdpcmUtils.shareInstance().adpcmDecoder(value, resultData, value.length);
+//                    player.write(resultData, 0, resultData.length);
+//                    Log.e("BLEDetialActivity", "playing");
+//                }
+
+
             }
         }
 
@@ -166,5 +240,96 @@ public class BLEDetialActivity extends BaseActivity {
         }
     };
 
+
+
+    private int audioBufSize;
+    Player player1;
+    int offset ;
+    private AudioTrack player;
+    class Player extends Thread{
+        byte[] data1=new byte[audioBufSize/4];
+        File file=new File("/sdcard/DCS/PCM/abc2.pcm");
+        int off1=0;
+        FileInputStream fileInputStream;
+
+        @Override
+        public void run() {
+            // TODO Auto-generated method stub
+            super.run();
+
+//                    String speakpath = "/sdcard/DCS/PCM/";
+//                    File file2 = new File(speakpath, "abc2.pcm");
+//                    // 创建FileOutputStream对象
+//                    FileOutputStream outputStream = null;
+//                    // 创建BufferedOutputStream对象
+//            BufferedOutputStream bufferedOutputStream = null;
+//                    // 如果文件存在则删除
+//                    if (file2.exists()) {
+//                        file2.delete();
+//                    }
+//                    // 在文件系统中根据路径创建一个新的空文件
+//            try {
+//                file2.createNewFile();
+//                // 获取FileOutputStream对象
+//                outputStream = new FileOutputStream(file2);
+//                // 获取BufferedOutputStream对象
+//                bufferedOutputStream = new BufferedOutputStream(outputStream);
+//            } catch (IOException e) {
+//                e.printStackTrace();
+//            }
+
+            int offset_thread = 0;
+            while(true){
+                try {
+                    fileInputStream=new FileInputStream(file);
+                    fileInputStream.skip((long)off1);
+                    int result = fileInputStream.read(data1,0,audioBufSize/4);
+                    off1 +=audioBufSize/4;
+                    if (result <= 0){
+                        player.stop();
+                        player.release();
+                        break;
+                    }
+                } catch (Exception e) {
+                    break;
+                }
+//
+                AdpcmUtils.AdpcmState state = new AdpcmUtils.AdpcmState();
+//                byte[] bytes = new byte[audioBufSize/4];
+                byte[] resultData = new byte[audioBufSize];
+//                int result = AdpcmUtils.shareInstance().adpcmCoder(data1, bytes, data1.length);
+                int result2 = AdpcmUtils.shareInstance().adpcmDecoder(data1, resultData, data1.length);
+                player.write(resultData, offset, resultData.length);
+//
+//                try {
+//                    // 往文件所在的缓冲输出流中写byte数据
+//                    bufferedOutputStream.write(resultData);
+//                    bufferedOutputStream.flush();
+//                }catch (Exception e){
+//
+//                }
+                Log.e("Tag", "data1.length" + data1.length);
+//                player.write(audiobuff, offset_thread, audioBufSize);
+//                offset_thread += audioBufSize;
+            }
+            // 关闭创建的流对象
+//                    if (outputStream != null) {
+//                        try {
+//                            outputStream.close();
+//                        } catch (IOException e) {
+//                            e.printStackTrace();
+//                        }
+//
+//                    }
+//                    if (bufferedOutputStream != null) {
+//                        try {
+//                            bufferedOutputStream.close();
+//                        } catch (Exception e2) {
+//                            e2.printStackTrace();
+//                        }
+//
+//                    }
+        }
+    }
 
 }

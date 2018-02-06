@@ -43,6 +43,7 @@ public class DeviceDetailActivity extends BaseActivity {
 
     private boolean mConnected;
 
+
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
