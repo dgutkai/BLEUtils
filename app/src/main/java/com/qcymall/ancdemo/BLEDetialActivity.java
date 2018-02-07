@@ -52,7 +52,10 @@ public class BLEDetialActivity extends BaseActivity {
 
     private byte[] adpcmBuff;
 //    private byte[] audiobuff;
-
+// 创建FileOutputStream对象
+FileOutputStream outputStream = null;
+    // 创建BufferedOutputStream对象
+    BufferedOutputStream bufferedOutputStream = null;
     @Override
     protected void onCreate(@Nullable Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
@@ -111,6 +114,27 @@ public class BLEDetialActivity extends BaseActivity {
 
     }
 
+
+//    @Override
+//    public void onBackPressed() {
+//        // 关闭创建的流对象
+//        if (outputStream != null) {
+//            try {
+//                outputStream.close();
+//            } catch (IOException e) {
+//                e.printStackTrace();
+//            }
+//
+//        }
+//        if (bufferedOutputStream != null) {
+//            try {
+//                bufferedOutputStream.close();
+//            } catch (Exception e2) {
+//                e2.printStackTrace();
+//            }
+//
+//        }
+//    }
 
     @Override
     public boolean onCreateOptionsMenu(Menu menu) {
@@ -215,6 +239,7 @@ public class BLEDetialActivity extends BaseActivity {
                     player.write(resultData, 0, resultData.length);
                 }
 
+                // ========分割线==============
 //                int cpylen = adpcmBuff.length-offset>value.length? value.length: adpcmBuff.length-offset;
 //                System.arraycopy(value, 0, adpcmBuff, offset, cpylen);
 //                offset += value.length;
@@ -224,6 +249,17 @@ public class BLEDetialActivity extends BaseActivity {
 //                    int result2 = AdpcmUtils.shareInstance().adpcmDecoder(value, resultData, value.length);
 //                    player.write(resultData, 0, resultData.length);
 //                    Log.e("BLEDetialActivity", "playing");
+//                }
+
+
+                // ========分割线==============
+//                try {
+//                    // 往文件所在的缓冲输出流中写byte数据
+//                    bufferedOutputStream.write(value);
+//                    bufferedOutputStream.flush();
+//
+//                }catch (Exception e){
+//
 //                }
 
 
@@ -247,7 +283,7 @@ public class BLEDetialActivity extends BaseActivity {
     int offset ;
     private AudioTrack player;
     class Player extends Thread{
-        byte[] data1=new byte[audioBufSize/4];
+        byte[] data1=new byte[audioBufSize*2];
         File file=new File("/sdcard/DCS/PCM/abc2.pcm");
         int off1=0;
         FileInputStream fileInputStream;
@@ -283,8 +319,8 @@ public class BLEDetialActivity extends BaseActivity {
                 try {
                     fileInputStream=new FileInputStream(file);
                     fileInputStream.skip((long)off1);
-                    int result = fileInputStream.read(data1,0,audioBufSize/4);
-                    off1 +=audioBufSize/4;
+                    int result = fileInputStream.read(data1,0,audioBufSize*2);
+                    off1 +=audioBufSize*2;
                     if (result <= 0){
                         player.stop();
                         player.release();
@@ -294,13 +330,15 @@ public class BLEDetialActivity extends BaseActivity {
                     break;
                 }
 //
-                AdpcmUtils.AdpcmState state = new AdpcmUtils.AdpcmState();
-//                byte[] bytes = new byte[audioBufSize/4];
-                byte[] resultData = new byte[audioBufSize];
-//                int result = AdpcmUtils.shareInstance().adpcmCoder(data1, bytes, data1.length);
-                int result2 = AdpcmUtils.shareInstance().adpcmDecoder(data1, resultData, data1.length);
-                player.write(resultData, offset, resultData.length);
-//
+//                AdpcmUtils.AdpcmState state = new AdpcmUtils.AdpcmState();
+////                byte[] bytes = new byte[audioBufSize/4];
+//                byte[] resultData = new byte[audioBufSize];
+////                int result = AdpcmUtils.shareInstance().adpcmCoder(data1, bytes, data1.length);
+//                int result2 = AdpcmUtils.shareInstance().adpcmDecoder(data1, resultData, data1.length);
+//                player.write(resultData, offset, resultData.length);
+                short[] shorts = toShortArray(data1);
+                player.write(shorts, offset, shorts.length);
+
 //                try {
 //                    // 往文件所在的缓冲输出流中写byte数据
 //                    bufferedOutputStream.write(resultData);
@@ -332,4 +370,25 @@ public class BLEDetialActivity extends BaseActivity {
         }
     }
 
+    public static short[] toShortArray(byte[] src) {
+
+        int count = src.length >> 1;
+        short[] dest = new short[count];
+        for (int i = 0; i < count; i++) {
+            dest[i] = (short) (src[i * 2 + 1] << 8 | src[2 * i] & 0xff);
+        }
+        return dest;
+    }
+
+    public static byte[] toByteArray(short[] src) {
+
+        int count = src.length;
+        byte[] dest = new byte[count << 1];
+        for (int i = 0; i < count; i++) {
+            dest[i * 2 + 1] = (byte) (src[i] >> 8);
+            dest[i * 2 ] = (byte) (src[i] >> 0);
+        }
+
+        return dest;
+    }
 }
